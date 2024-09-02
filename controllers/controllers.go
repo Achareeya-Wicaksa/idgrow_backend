@@ -16,6 +16,22 @@ type Claims struct {
     Email string `json:"email"`
     jwt.StandardClaims
 }
+func GetAllMutasi(c *gin.Context) {
+    var mutasi []models.Mutasi
+    err := models.DB.Preload("User").Preload("Barang").Find(&mutasi).Error
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error", "details": err.Error()})
+        return
+    }
+
+    if len(mutasi) == 0 {
+        c.JSON(http.StatusNotFound, gin.H{"error": "No mutations found"})
+        return
+    }
+
+    c.JSON(http.StatusOK, mutasi)
+}
+
 
 func Register(c *gin.Context) {
     var user models.User

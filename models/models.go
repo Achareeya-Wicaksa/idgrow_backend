@@ -33,9 +33,10 @@ type Mutasi struct {
     Jumlah     int       `json:"jumlah"`
     UserID     uint      `json:"user_id"`
     BarangID   uint      `json:"barang_id"`
-    User       User      `json:"user"`
-    Barang     Barang    `json:"barang"`
+    User       User      `json:"user" gorm:"foreignkey:UserID"`
+    Barang     Barang    `json:"barang" gorm:"foreignkey:BarangID"`
 }
+
 
 func InitDB() {
     err := godotenv.Load()

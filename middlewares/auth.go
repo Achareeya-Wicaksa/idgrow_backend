@@ -1,34 +1,37 @@
-// middlewares/auth.go
-package middlewares
+// middleware/auth.go
+package middleware
 
 import (
-    "github.com/gin-gonic/gin"
     "net/http"
+    "strings"
+
     "github.com/dgrijalva/jwt-go"
-    "backend/controllers"
 )
 
-func AuthMiddleware() gin.HandlerFunc {
-    return func(c *gin.Context) {
-        tokenString := c.GetHeader("Authorization")
-
-        if tokenString == "" {
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "Request does not contain an access token"})
-            c.Abort()
+func JWTAuth(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        authHeader := r.Header.Get("Authorization")
+        if authHeader == "" {
+            http.Error(w, "Authorization header is missing", http.StatusUnauthorized)
             return
         }
 
-        claims := &controllers.Claims{}
-        token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-            return []byte("secret_key"), nil
+        tokenString := strings.Split(authHeader, "Bearer ")[1]
+        if tokenString == "" {
+            http.Error(w, "Token is missing", http.StatusUnauthorized)
+            return
+        }
+
+        // Verifikasi token JWT
+        token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+            return []byte("secret_key"), nil // Ganti dengan kunci yang Anda gunakan untuk membuat token
         })
 
         if err != nil || !token.Valid {
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-            c.Abort()
+            http.Error(w, "Invalid token", http.StatusUnauthorized)
             return
         }
 
-        c.Next()
-    }
+        next.ServeHTTP(w, r)
+    })
 }
