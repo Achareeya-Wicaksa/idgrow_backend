@@ -131,14 +131,64 @@ func DeleteBarang(c *gin.Context) {
 
 func CreateMutasi(c *gin.Context) {
     var mutasi models.Mutasi
-    if err := c.ShouldBindJSON(&mutasi); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+    var requestBody map[string]interface{}
+
+    // Decode request body manually
+    if err := c.BindJSON(&requestBody); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Data tidak lengkap"})
         return
     }
 
-    models.DB.Create(&mutasi)
-    c.JSON(http.StatusOK, mutasi)
+    // Extract fields manually
+    if tanggal, ok := requestBody["tanggal"].(string); ok {
+        mutasi.Tanggal, _ = time.Parse(time.RFC3339, tanggal)
+    }
+    if jenisMutasi, ok := requestBody["jenis_mutasi"].(string); ok {
+        mutasi.JenisMutasi = jenisMutasi
+    }
+    if jumlah, ok := requestBody["jumlah"].(float64); ok {
+        mutasi.Jumlah = int(jumlah)
+    }
+    if userID, ok := requestBody["user_id"].(float64); ok {
+        mutasi.UserID = uint(userID)
+    }
+    if barangID, ok := requestBody["barang_id"].(float64); ok {
+        mutasi.BarangID = uint(barangID)
+    }
+
+    // Validate data
+    if mutasi.Tanggal.IsZero() || mutasi.JenisMutasi == "" || mutasi.Jumlah <= 0 || mutasi.UserID <= 0 || mutasi.BarangID <= 0 {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Data tidak lengkap"})
+        return
+    }
+
+    // Save data
+    if err := models.DB.Create(&mutasi).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan data"})
+        return
+    }
+
+    // Debug output: check if data is saved correctly
+
+    // Check if data exists in the barang table
+    var barang models.Barang
+    if err := models.DB.First(&barang, mutasi.BarangID).Error; err != nil {
+        barang.ID = 0 // Ensure ID is zero if not found
+    }
+
+    // Load relations explicitly
+    var mutasiWithRelations models.Mutasi
+    if err := models.DB.Preload("User").Preload("Barang").First(&mutasiWithRelations, mutasi.ID).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memuat relasi"})
+        return
+    }
+
+    // Debug output
+
+    c.JSON(http.StatusOK, mutasiWithRelations)
 }
+
+
 
 func GetMutasiByBarang(c *gin.Context) {
     var mutasi []models.Mutasi
