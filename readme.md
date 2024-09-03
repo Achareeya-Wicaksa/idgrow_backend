@@ -46,3 +46,5 @@ DSN=root:@tcp(localhost:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local
 ```bash
 go run main.go
 ```
+## 🎯 Postman Documentation
+https://documenter.getpostman.com/view/31882906/2sAXjNXAtY
