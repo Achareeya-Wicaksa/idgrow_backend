@@ -23,14 +23,17 @@ func main() {
     r.POST("/register", controllers.Register)
     r.POST("/login", controllers.Login)
     r.GET("/barang/:id", controllers.GetBarangByID)
+    r.GET("/mutasi/:id", controllers.GetMutasiByID)
+    r.GET("/mutasi", controllers.GetAllMutasi)
+
     authorized := r.Group("/")
     {
         authorized.POST("/barang", controllers.CreateBarang)
         authorized.PUT("/barang/:id", controllers.UpdateBarang)
         authorized.DELETE("/barang/:id", controllers.DeleteBarang)
-        authorized.GET("/mutasi", controllers.GetAllMutasi)
         authorized.POST("/mutasi", controllers.CreateMutasi)
-        authorized.GET("/mutasi/:barang_id", controllers.GetMutasiByBarang)
+        authorized.DELETE("/mutasi/:id", controllers.DeleteMutasi)
+        //authorized.GET("/mutasi/:barang_id", controllers.GetMutasiByBarang)
     }
 
     r.Run(":8080")

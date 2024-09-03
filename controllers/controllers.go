@@ -157,11 +157,7 @@ func CreateMutasi(c *gin.Context) {
     }
 
     // Validate data
-    if mutasi.Tanggal.IsZero() || mutasi.JenisMutasi == "" || mutasi.Jumlah <= 0 || mutasi.UserID <= 0 || mutasi.BarangID <= 0 {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Data tidak lengkap"})
-        return
-    }
-
+ 
     // Save data
     if err := models.DB.Create(&mutasi).Error; err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan data"})
@@ -187,8 +183,34 @@ func CreateMutasi(c *gin.Context) {
 
     c.JSON(http.StatusOK, mutasiWithRelations)
 }
+func DeleteMutasi(c *gin.Context) {
+    var mutasi models.Mutasi
+    id := c.Param("id")
+    
+    // Cari mutasi berdasarkan ID
+    if err := models.DB.Where("id = ?", id).First(&mutasi).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Mutasi not found"})
+        return
+    }
+
+    // Hapus mutasi dari database
+    if err := models.DB.Delete(&mutasi).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete mutasi"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "Mutasi deleted successfully"})
+}
 
 
+func GetMutasiByID(c *gin.Context) {
+    var mutasi models.Mutasi
+    if err := models.DB.Where("id = ?", c.Param("id")).Preload("User").Preload("Barang").First(&mutasi).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Mutasi not found"})
+        return
+    }
+    c.JSON(http.StatusOK, mutasi)
+}
 
 func GetMutasiByBarang(c *gin.Context) {
     var mutasi []models.Mutasi

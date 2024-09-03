@@ -4,6 +4,7 @@ import (
     "github.com/jinzhu/gorm"
     _ "github.com/jinzhu/gorm/dialects/mysql"
     "github.com/joho/godotenv"
+    "encoding/json"
     "time"
     "os"
     "log"
@@ -28,16 +29,38 @@ type Barang struct {
 
 type Mutasi struct {
     gorm.Model
-    Tanggal    time.Time `json:"tanggal"`
-    JenisMutasi string   `json:"jenis_mutasi"`
-    Jumlah     int       `json:"jumlah"`
-    UserID     uint      `json:"user_id"`
-    BarangID   uint      `json:"barang_id"`
-    User       User      `json:"user" gorm:"foreignkey:UserID"`
-    Barang     Barang    `json:"barang" gorm:"foreignkey:BarangID"`
+    Tanggal     time.Time `json:"tanggal"`
+    JenisMutasi string    `json:"jenis_mutasi"`
+    Jumlah      int       `json:"jumlah"`
+    UserID      uint      `json:"user_id"`
+    BarangID    uint      `json:"barang_id"`
+    User        User      `json:"user" gorm:"foreignKey:UserID"`
+    Barang      Barang    `json:"barang" gorm:"foreignKey:BarangID"`
 }
 
 
+
+const timeLayout = "2006-01-02T15:04:05Z07:00"
+
+// ParseJSON menyesuaikan input waktu dengan format yang diinginkan
+func (m *Mutasi) UnmarshalJSON(data []byte) error {
+    var raw map[string]interface{}
+    if err := json.Unmarshal(data, &raw); err != nil {
+        return err
+    }
+    
+    if t, ok := raw["tanggal"].(string); ok {
+        parsedTime, err := time.Parse(timeLayout, t)
+        if err != nil {
+            return err
+        }
+        m.Tanggal = parsedTime
+    }
+    
+    // parsing field lainnya
+    
+    return nil
+}
 func InitDB() {
     err := godotenv.Load()
     if err != nil {
